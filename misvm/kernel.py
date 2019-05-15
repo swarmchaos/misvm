@@ -1,3 +1,4 @@
+from misvm.util import spdiag, slices
 """
 Contains various kernels for SVMs
 
@@ -5,7 +6,6 @@ A kernel should take two arguments,
 each of which is a list of examples
 as rows of a numpy matrix
 """
-from __future__ import print_function, division
 from numpy import matrix, vstack, hstack
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -18,8 +18,6 @@ import time
 
 CACHE_CUTOFF_T = 10
 CACHE_DIR = '.kernel_cache'
-
-from misvm.util import spdiag, slices
 
 
 def by_name(full_name, gamma=None, p=None, use_caching=False):
@@ -83,8 +81,8 @@ def _hash_array(x):
 def cached_kernel(K):
     def cached_K(X, Y):
         if type(X) == list:
-            x_hash = ''.join(map(_hash_array, X))
-            y_hash = ''.join(map(_hash_array, Y))
+            x_hash = ''.join([elem for elem in map(_hash_array, X)])
+            y_hash = ''.join([elem for elem in map(_hash_array, Y)])
         else:
             x_hash = _hash_array(X)
             y_hash = _hash_array(Y)
@@ -116,8 +114,8 @@ def set_kernel(k, normalizer=no_norm):
 
     def K(X, Y):
         if type(X) == list:
-            norm = lambda x: normalizer(x, k)
-            x_norm = matrix(map(norm, X))
+            def norm(x): return normalizer(x, k)
+            x_norm = matrix([elem for elem in map(norm, X)])
             if id(X) == id(Y):
                 # Optimize for symmetric case
                 norms = x_norm.T * x_norm
@@ -134,11 +132,11 @@ def set_kernel(k, normalizer=no_norm):
                     diag = np.array([np.sum(k(x, x)) for x in X])
                     raw_kernel = upper + upper.T + spdiag(diag)
             else:
-                y_norm = matrix(map(norm, Y))
+                y_norm = matrix([elem for elem in map(norm, Y)])
                 norms = x_norm.T * y_norm
                 raw_kernel = k(vstack(X), vstack(Y))
-                lensX = map(len, X)
-                lensY = map(len, Y)
+                lensX = [elem for elem in map(len, X)]
+                lensY = [elem for elem in map(len, Y)]
                 if any(l != 1 for l in lensX):
                     raw_kernel = vstack([np.sum(raw_kernel[i:j, :], axis=0)
                                          for i, j in slices(lensX)])

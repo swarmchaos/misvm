@@ -48,7 +48,7 @@ class MissSVM(MICA):
                       object containing m instances with k features
         @param y : an array-like object of length n containing -1/+1 labels
         """
-        self._bags = map(np.asmatrix, bags)
+        self._bags = [elem for elem in map(np.asmatrix, bags)]
         bs = BagSplitter(self._bags,
                          np.asmatrix(y).reshape((-1, 1)))
         self._X = np.vstack([bs.pos_instances,
@@ -66,7 +66,8 @@ class MissSVM(MICA):
         _, _, f, A, b, lb, ub = self._setup_svm(self._y, self._y, C)
         ub[:bs.X_p] *= (float(bs.L_n) / float(bs.X_p))
         ub[bs.X_p: bs.X_p + 2 * bs.L_p] *= (float(bs.L_n) / float(bs.L_p))
-        K = kernel_by_name(self.kernel, gamma=self.gamma, p=self.p)(self._X, self._X)
+        K = kernel_by_name(self.kernel, gamma=self.gamma,
+                           p=self.p)(self._X, self._X)
         D = spdiag(self._y)
         ub0 = np.matrix(ub)
         ub0[bs.X_p: bs.X_p + 2 * bs.L_p] *= 0.5
@@ -75,7 +76,8 @@ class MissSVM(MICA):
             eye_n = bs.L_n + 2 * bs.L_p
             top = np.zeros((bs.X_p, bs.L_p))
             for row, (i, j) in enumerate(slices(bs.pos_groups)):
-                top[row, i:j] = _grad_softmin(-pos_classifications[i:j], self.alpha).flat
+                top[row,
+                    i:j] = _grad_softmin(-pos_classifications[i:j], self.alpha).flat
             return sp.bmat([[sp.coo_matrix(top), None],
                             [None, sp.eye(eye_n, eye_n)]])
 
@@ -94,7 +96,8 @@ class MissSVM(MICA):
             else:
                 if self.verbose:
                     print('Random restart %d of %d...' % (rr, self.restarts))
-                alphas = np.matrix([uniform(0.0, 1.0) for i in range(len(lb))]).T
+                alphas = np.matrix([uniform(0.0, 1.0)
+                                    for i in range(len(lb))]).T
                 obj = Objective(0.0, 0.0)
             svm = MICA(kernel=self.kernel, gamma=self.gamma, p=self.p,
                        verbose=self.verbose, sv_cutoff=self.sv_cutoff)
@@ -121,8 +124,10 @@ class MissSVM(MICA):
                     pos_differences = 1.0 - classifications
                     neg_differences = 1.0 + classifications
                     # Slacks are positive differences only
-                    pos_slacks = np.multiply(pos_differences > 0, pos_differences)
-                    neg_slacks = np.multiply(neg_differences > 0, neg_differences)
+                    pos_slacks = np.multiply(
+                        pos_differences > 0, pos_differences)
+                    neg_slacks = np.multiply(
+                        neg_differences > 0, neg_differences)
                     all_slacks = np.hstack([pos_slacks, neg_slacks])
 
                     cself.mention('Linearizing...')
